@@ -1,0 +1,42 @@
+#!/usr/bin/env /bin/bash -f
+###
+#  @file   automountd
+#  @brief  Mount a Network Share on Joining Specified WiFi Network
+#  @author KrizTioaN (christiaanboersma@hotmail.com)
+#  @date   2021-07-24
+#  @note   BSD-3 licensed
+#
+###############################################
+
+SSID="NetworkSSID"
+MOUNTPOINT="/Volumes/Shared"
+REMOTE="afp://user:password@192.168.20.100/Shared"
+
+WIFI=$(/System/Library/PrivateFrameworks/Apple80211.framework/Versions/A/Resources/airport -I | grep ' SSID:' | cut -d ':' -f 2 | tr -d ' ')
+if [ "$WIFI" == "$SSID" ]; then
+
+	if [ ! -d "$MOUNTPOINT" ]; then
+
+		mkdir "$MOUNTPOINT" &> /dev/null
+
+		mount "$REMOTE" "$MOUNTPOINT" &> /dev/null
+
+		if [ $? != 0 ]; then
+
+			rmdir "$MOUNTPOINT" &> /dev/null
+
+			MESSAGE=$(date "+FAILED to mount '$MOUNTPOINT' on %A %d %b %Y, %H:%M:%S")
+		else
+
+			MESSAGE=$(date "+mounted '$MOUNTPOINT' on %A %d %b %Y, %H:%M:%S")
+		fi
+
+		if command -v growlnotify &> /dev/null;
+		then
+
+			/usr/local/bin/growlnotify --name "Automountd" --appIcon "Disk Utility" --title "Automountd:" --message "$MESSAGE" &>/dev/null
+		fi
+
+		echo -e "\n$MESSAGE\n"
+	fi
+fi
